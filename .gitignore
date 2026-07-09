@@ -1,0 +1,19 @@
+# Секреты и ключи
+keys/
+*.pem
+*.key
+.env
+
+# Виртуальное окружение
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE / ОС
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
