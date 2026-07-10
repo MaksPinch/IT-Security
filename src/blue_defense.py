@@ -1,12 +1,21 @@
 # src/blue_defense.py
-# Task 6 (Blue Team) - detection logic for incoming OrderPackets.
-# This first version gives the "detection evidence" for each attack in Task 6.
-# In Task 7 we extend it with file logging and rate limiting.
+# Blue Team defence for the order protocol.
+# Task 6: detection logic (OrderMonitor).
+# Task 7: security controls - verify_order_packet() + file logging.
+#
+# Controls implemented (Task 7 requirements):
+#   - Signature verification  (integrity + authenticity)
+#   - Identity binding         (customer_id must match its own public key)
+#   - Replay detection         (duplicate signatures rejected)
+#   - Timestamp freshness      (old packets rejected)
+#   - Rate limiting            (flood flagged)
 
 import time
+import os
+import logging
 
 from crypto_utils import load_public_key, verify_signature
-from order_packet import signed_data_from_packet
+from order_packet import OrderPacket, signed_data_from_packet
 
 
 def _clean(value) -> str:
@@ -62,3 +71,38 @@ class OrderMonitor:
             return False, "REPLAY - stale timestamp"
 
         return True, "ACCEPTED - legitimate order"
+
+
+# ---------------------------------------------------------------------------
+# Task 7 - security controls: verify_order_packet() + logging
+# ---------------------------------------------------------------------------
+
+def setup_logging(path="logs/blue_team.log", name="blue_team"):
+    """Configure a logger that writes both to a file and to the console."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()               # avoid duplicate handlers on re-run
+    fmt = logging.Formatter("%(asctime)s  %(levelname)-6s  %(message)s", "%H:%M:%S")
+    file_handler = logging.FileHandler(path, mode="w", encoding="utf-8")
+    file_handler.setFormatter(fmt)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(fmt)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+    return logger
+
+
+def verify_order_packet(pkt, monitor, scenario="", logger_name="blue_team"):
+    """Blue Team control: verify one packet, log the result, return (ok, reason).
+
+    Accepts either a full IP/UDP/OrderPacket or a bare OrderPacket.
+    """
+    order = pkt[OrderPacket] if pkt.haslayer(OrderPacket) else pkt
+    accepted, reason = monitor.check(order)
+
+    logger = logging.getLogger(logger_name)
+    tag = "ACCEPT" if accepted else "REJECT"
+    label = f"[{scenario}] " if scenario else ""
+    logger.info(f"{tag}  {label}{reason}")
+    return accepted, reason
