@@ -1,0 +1,14 @@
+13:48:48  INFO    === Red Team - attempts to bypass the Blue Team controls ===
+13:48:48  INFO    Attempt 1: sign a customerA order with the attacker's (customerB) key
+13:48:48  INFO    REJECT  [bypass-1 forged signature] TAMPERING/SPOOFING - signature does not match
+13:48:48  INFO      -> identity binding uses customerA's PUBLIC key, so B's signature fails
+13:48:48  INFO    Attempt 2: change the timestamp of a captured packet to look fresh
+13:48:48  INFO    REJECT  [bypass-2 refreshed timestamp] TAMPERING/SPOOFING - signature does not match
+13:48:48  INFO      -> timestamp is a SIGNED field, so changing it breaks the signature
+13:48:48  INFO    Attempt 3: replay an exact, validly signed packet within the fresh window
+13:48:48  INFO    ACCEPT  [bypass-3 first send] ACCEPTED - legitimate order
+13:48:48  INFO    REJECT  [bypass-3 replay] REPLAY - duplicate packet
+13:48:48  INFO      -> duplicate-signature detection rejects the resend
+13:48:48  INFO    Note: a SLOW attacker (under the rate threshold) evades flood detection,
+13:48:48  INFO          but every packet is still subject to signature/replay/freshness checks.
+13:48:48  INFO    === Done - full log saved to logs/red_team_bypass.log ===
